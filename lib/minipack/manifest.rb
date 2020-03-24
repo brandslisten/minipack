@@ -52,8 +52,9 @@ module Minipack
       manifest_pack_name = manifest_name(name, manifest_pack_type)
       paths = data['entrypoints']&.dig(manifest_pack_name, manifest_pack_type) || handle_missing_entry(name)
 
-      entries = data['entrypoints']&.dig(manifest_pack_name, manifest_pack_type).map do |source|
-        entry_from_source(source) || handle_missing_entry(name)
+      pack_items = data['entrypoints']&.dig(manifest_pack_name, manifest_pack_type)
+      entries = pack_items.map do |source|
+        entry_from_source(source, pack_items) || handle_missing_entry(name)
       end
 
       ChunkGroup.new(entries)
@@ -132,11 +133,10 @@ module Minipack
     #
     # @param [String] source
     # @return [Minipack::Entry,nil]
-    def entry_from_source(source)
-      entry = assets.find { |entry| entry.is_a?(String) ? entry == source : entry['src'] == source }
+    def entry_from_source(source, pack_items)
+      entry = pack_items.find { |entry| entry.is_a?(String) ? entry == source : entry['src'] == source }
       return unless entry
       entry.is_a?(String) ? Entry.new(entry) : Entry.new(entry['src'], integrity: entry['integrity'])
     end
   end
 end
-
